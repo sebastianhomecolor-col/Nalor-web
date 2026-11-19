@@ -1,7 +1,7 @@
 // NALOR · service worker de la versión web (scripts/build.ts lo rellena). Guarda los archivos del juego en el teléfono, cada
 // uno con su huella: la primera vez baja todo; en cada versión nueva SOLO baja los archivos que han cambiado (la casa C01,
 // 18 MB, no se vuelve a bajar si no cambia). Después abre desde el teléfono, también sin conexión.
-const VER = "c631bba0473b", FILES = {"index.html":"39c7bcf4837e","game.js":"d8f8b0168bac","c01_game.glb":"b8009b28af7a","modelos.json":"52d3429e5f3f","manifest.webmanifest":"8bb1ec4f1579","icono-192.png":"41631812547f","icono-512.png":"ee02f67edc17"}, CACHE = "nalor-archivos";
+const VER = "3d84be7b4f56", FILES = {"index.html":"39c7bcf4837e","game.js":"0f09a6be82a0","c01_game.glb":"b8009b28af7a","modelos.json":"1154500099c8","manifest.webmanifest":"8bb1ec4f1579","icono-192.png":"41631812547f","icono-512.png":"ee02f67edc17"}, CACHE = "nalor-archivos";
 const key = (n) => new URL(`${n}?h=${FILES[n]}`, self.registration.scope).href;
 const nameOf = (url) => { const s = self.registration.scope, u = new URL(url); if (!u.href.startsWith(s)) return null; const n = u.origin + u.pathname === s ? "index.html" : u.href.slice(s.length).split(/[?#]/)[0]; return n in FILES ? n : null; };
 self.addEventListener("install", (e) => {
