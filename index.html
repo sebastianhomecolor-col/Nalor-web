@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1f3320">
+<title>NALOR · Embestialda</title>
+<style>
+[hidden] { display:none !important; }
+:root { --ui:1; --bg:#f5f3ee; --panel:#fffdf8; --ink:#1d1b18; --muted:#6b665d; --line:#e2ddd2; --accent:#2f6f5e; --accent-ink:#fff; --chip:#efece5; --good:#2f7d32; --bad:#b03a2e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141517; --panel:#1f2124; --ink:#ebe9e4; --muted:#a19d95; --line:#33363a; --accent:#6fc3a8; --accent-ink:#0f1d18; --chip:#2a2d31; --good:#8fd694; --bad:#ef8a7e; } }
+:root[data-theme="dark"] { --bg:#141517; --panel:#1f2124; --ink:#ebe9e4; --muted:#a19d95; --line:#33363a; --accent:#6fc3a8; --accent-ink:#0f1d18; --chip:#2a2d31; --good:#8fd694; --bad:#ef8a7e; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { overflow-x:hidden; }
+button { font:inherit; min-height:44px; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+button.big { font-size:18px; min-height:58px; width:100%; }
+button:disabled { opacity:.45; }
+.small { font-size:12.5px; } .muted { color:var(--muted); }
+.home { box-sizing:border-box; max-width:640px; margin:0 auto; padding:max(16px, env(safe-area-inset-top)) 16px 32px; display:flex; flex-direction:column; gap:12px; }
+.home h1 { margin:2px 0 0; font-size:23px; } .home p { margin:0; }
+.note { background:var(--chip); border-radius:10px; padding:8px 12px; }
+.field { display:flex; flex-direction:column; gap:4px; }
+.field select { font:inherit; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); min-height:44px; }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.opt { display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+.opt input { width:22px; height:22px; margin-top:2px; }
+.json { width:100%; min-height:200px; box-sizing:border-box; font:11px/1.3 ui-monospace, monospace; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; }
+.res table { border-collapse:collapse; font-size:12.5px; width:100%; } .res th, .res td { border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; white-space:nowrap; }
+.res .tbl { overflow-x:auto; }
+.ok { color:var(--good); font-weight:600; } .bad { color:var(--bad); font-weight:600; }
+.stage { position:fixed; inset:0; background:#9fb59a; overflow:hidden; user-select:none; -webkit-user-select:none; }
+/* 27-10: ningún gesto del navegador en la partida (cada dedo es un mando; nada de zoom ni desplazamiento). */
+.stage, .stage * { touch-action:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+.stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+.menu { position:absolute; left:max(10px, env(safe-area-inset-left)); top:max(6px, env(safe-area-inset-top)); z-index:6; min-height:38px; padding:2px 12px; background:#1c2420; color:#fff; border:2px solid #56605a; }
+.tools { position:absolute; left:max(10px, env(safe-area-inset-left)); top:calc(max(6px, env(safe-area-inset-top)) + 46px); z-index:6; display:flex; gap:6px; transform:scale(var(--ui)); transform-origin:top left; }
+.tools button { min-height:34px; padding:2px 10px; font-size:13px; background:#1c2420; color:#fff; border:2px solid #56605a; }
+.nodes { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.nd { position:absolute; left:0; top:0; margin:-15px 0 0 -15px; width:30px; height:30px; border-radius:50%; display:grid; place-content:center; font-size:16px; background:#1c2420; border:2px solid #8e958e; }
+.nd.near { border-color:#ffd04a; box-shadow:0 0 0 3px rgba(255,208,74,.35); }
+.perf { position:absolute; left:max(10px, env(safe-area-inset-left)); bottom:max(4px, env(safe-area-inset-bottom)); z-index:5; font:10.5px ui-monospace, monospace; color:#fff; background:rgba(14,18,16,.55); padding:1px 6px; border-radius:6px; pointer-events:none; }
+/* Dúo: retratos en el borde derecho (como la referencia); tocar el del compañero = ⇄ */
+.duo { position:absolute; right:calc(max(14px, env(safe-area-inset-right)) + 140px * var(--ui)); top:max(6px, env(safe-area-inset-top)); z-index:6; display:flex; flex-direction:row; gap:6px; align-items:flex-start; transform:scale(var(--ui)); transform-origin:top right; }
+.duo .u { position:relative; width:62px; min-height:0; padding:0; border:0; background:none; display:flex; flex-direction:column; align-items:center; gap:3px; color:#f3f1ec; touch-action:none; }
+.duo .u .pic { width:50px; height:50px; border-radius:50%; display:grid; place-content:center; font-size:24px; background:#22302a; border:3px solid #8e958e; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+.duo .u.you .pic { border-color:#6fe0c6; box-shadow:0 0 0 2px rgba(111,224,198,.4), 0 2px 6px rgba(0,0,0,.4); }
+.duo .u.down .pic { background:#4a2622; filter:grayscale(.7); }
+.duo .u i.hp, .duo .u i.en { display:none; } /* 31-10: sin barras de vida y energía bajo los retratos (decisión de Sebastian) */
+.duo .u small { position:absolute; left:-4px; top:34px; font:700 10px system-ui; background:#1c2420; border:1px solid #8e958e; border-radius:999px; padding:0 4px; }
+.duo .u em { position:absolute; top:14px; font:700 10px system-ui; font-style:normal; background:#b03a2e; padding:0 4px; border-radius:4px; }
+/* Vida del personaje que llevas: abajo en el centro */
+.mehp { position:absolute; left:50%; transform:translateX(-50%); bottom:max(8px, env(safe-area-inset-bottom)); z-index:5; width:min(240px, 30vw); pointer-events:none; text-align:center; }
+.mehp i.hp { height:12px; border:2px solid #d8d2c4; border-radius:3px; transform:skewX(-20deg); background:#1c2420; }
+.mehp i.hp b { background:linear-gradient(#5fe0a8, #2fa778); transition:width .2s; }
+.mehp span { position:absolute; left:0; right:0; top:-1px; font:700 10.5px system-ui; color:#fff; text-shadow:0 1px 2px #000; }
+.mehp small { display:block; font:600 10px system-ui; color:#e8e6e0; text-shadow:0 1px 2px #000; margin-top:1px; }
+i.hp, i.en { display:block; height:7px; background:#3a423e; border-radius:4px; overflow:hidden; }
+i.hp b { display:block; height:100%; background:#6fd07a; } i.en b { display:block; height:100%; background:#6fb4e6; }
+.foes { display:none !important; /* 31-10: sin barra de vida del rival (decisión de Sebastian) */ position:absolute; left:50%; transform:translateX(-50%); top:calc(max(6px, env(safe-area-inset-top)) + 52px + 38px * var(--ui)); /* E2-3: bajo la fila Llamar/Bolsa/Movimiento, sin pisarla en pantallas estrechas */ z-index:5; display:flex; gap:6px; pointer-events:none; }
+.foes .f { background:#2a1c1a; color:#fbe9e4; border-radius:8px; padding:3px 8px; font-size:11.5px; min-width:120px; }
+.foes .f.lk { outline:2px solid #ffd04a; }
+.foes .f i.hp b { background:#e2584a; }
+.ctxchip { position:absolute; left:50%; transform:translateX(-50%); top:max(8px, env(safe-area-inset-top)); z-index:5; font:600 12px system-ui; color:#f3f1ec; background:#1c2420; padding:4px 12px; border-radius:999px; pointer-events:none; transition:background .25s; }
+.stage[data-ctx="ALERTA"] .ctxchip { background:#7a5a12; }
+.stage[data-ctx="COMBATE"] .ctxchip { background:#7a2a20; }
+.alert { position:absolute; left:50%; transform:translateX(-50%); top:calc(max(6px, env(safe-area-inset-top)) + 72px); z-index:5; font:12.5px system-ui; color:#fff4d6; background:#3d2f10; border:1px solid #c79a2a; padding:3px 12px; border-radius:999px; pointer-events:none; }
+.alert.tap { pointer-events:auto; cursor:pointer; text-decoration:underline dotted; }
+.alert.edge { background:#4a1f12; border-color:#e0703a; color:#ffe2cf; }
+.slot.hot::before { animation: rdy 1s ease-out infinite; }
+.alert span:first-child { display:inline-block; transition:transform .15s; }
+.toast { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%) scale(.96); z-index:6; font:700 20px system-ui; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.7); opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+/* EB0: aviso de área (número y nombre), breve, arriba en el centro bajo la etiqueta de contexto; no recibe toques. */
+.areab { position:absolute; left:50%; top:calc(max(8px, env(safe-area-inset-top)) + 30px); transform:translateX(-50%); z-index:6; pointer-events:none; text-align:center; color:#f6f1e4; text-shadow:0 1px 4px rgba(0,0,0,.8); animation:areab 2.6s ease both; white-space:nowrap; }
+.areab[hidden] { display:none; }
+.areab b { display:block; font:700 calc(13px * var(--ui, 1)) system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.85; }
+.areab small { display:block; font:600 calc(19px * var(--ui, 1)) system-ui; }
+/* EB0.1: mapa que se descubre. Recuadro arriba a la izquierda, bajo Llamar/Bolsa/Movimiento; toca para verlo entero. */
+.map { position:absolute; left:max(10px, env(safe-area-inset-left)); top:calc(max(6px, env(safe-area-inset-top)) + 46px + 44px * var(--ui)); z-index:6; width:calc(96px * var(--ui)); height:calc(96px * var(--ui)); border-radius:10px; overflow:hidden; border:2px solid rgba(232,228,218,.7); box-shadow:0 2px 6px rgba(0,0,0,.4); background:#161a18; touch-action:none; }
+.map canvas { position:static; inset:auto; width:100%; height:100%; display:block; }
+.map i { position:absolute; top:2px; left:50%; transform:translateX(-50%); font:700 10px system-ui; font-style:normal; color:#f6f1e4; text-shadow:0 1px 2px #000; pointer-events:none; }
+.mapfull { position:absolute; inset:0; z-index:20; background:rgba(10,12,11,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; touch-action:none; }
+.mapfull[hidden] { display:none; }
+.mapfull canvas { position:static; inset:auto; width:min(96vw, 86vh); height:min(96vw, 86vh); display:block; }
+.mapfull small { color:#d8d2c4; margin-top:4px; font:12px system-ui; }
+.mapfull .tpbtn { margin-top:8px; padding:10px 16px; border-radius:10px; border:1px solid #8a8270; background:#2a2c28; color:#f6f1e4; font:600 14px system-ui; }
+.mapfull .tpbtn.on { background:#7a5a10; border-color:#ffd04a; }
+@keyframes areab { 0% { opacity:0; transform:translate(-50%, -6px); } 12% { opacity:1; transform:translate(-50%, 0); } 80% { opacity:1; } 100% { opacity:0; } }
+.floaters { position:absolute; inset:0; z-index:4; pointer-events:none; }
+.fl { position:absolute; left:0; top:0; font:800 17px system-ui; color:#fff; text-shadow:0 1px 3px #000, 0 0 2px #000; margin:-10px 0 0 -12px; }
+.fl.me { color:#ff8a7a; } .fl.info { color:#ffe28a; font-size:13px; }
+/* Mandos de la derecha (cierre de E2, 27-10): GRUPO COMPACTO para el pulgar derecho, semitransparentes (opacidad del
+   fondo --bga, 40–55 %, por defecto 48 %; se elige en la portada) con iconos blancos nítidos y sombra para leerse sobre
+   el bosque. El ataque es el grande, en la esquina; esquiva y habilidades en arco a su alrededor; guardia y reanimar en
+   un segundo arco; ⇄ apartado arriba, cuadrado y azul, para no pulsarlo sin querer. Cada botón tiene un área táctil
+   MAYOR que su círculo visible (--hit). Sitios FIJOS: el contexto solo cambia lo que muestran. */
+.pad { position:absolute; right:max(10px, env(safe-area-inset-right)); bottom:max(8px, env(safe-area-inset-bottom)); width:0; height:0; z-index:5; transform:scale(var(--ui)); transform-origin:0 0; }
+.slot { --sb:#1d2621; --sbd:#e8e4da; --sz:56px; --hit:calc(var(--sz) + 18px); position:absolute; width:var(--hit); height:var(--hit); margin:calc(var(--hit) / -2) 0 0 calc(var(--hit) / -2); padding:0; border:0; border-radius:50%; background:none; isolation:isolate;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; color:#fff; touch-action:none; transition:opacity .22s; }
+.slot::before, .slot::after { content:""; position:absolute; inset:calc((var(--hit) - var(--sz)) / 2); border-radius:50%; pointer-events:none; }
+.slot::before { z-index:-2; background:color-mix(in srgb, var(--sb) calc(var(--bga, .48) * 100%), transparent); border:1.5px solid color-mix(in srgb, var(--sbd) 70%, transparent); box-shadow:0 2px 6px rgba(0,0,0,.22); transition:background-color .15s, border-color .15s, transform .08s; }
+.slot::after { z-index:-1; background:conic-gradient(rgba(6,8,7,.62) calc(var(--cd,0)*360deg), transparent 0); }
+.slot b { font-size:21px; font-weight:400; text-shadow:0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.45); }
+.slot .l { font-size:8px; max-width:52px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-weight:600; text-shadow:0 1px 2px #000, 0 0 3px #000; }
+.slot small { font-size:9px; font-weight:700; color:#ffe28a; min-height:9px; text-shadow:0 1px 2px #000; }
+.slot.cd small { font-size:13px; color:#fff; }
+.slot.off { --sb:#2a2e2c; --sbd:#8d918c; color:#c3c6c1; }
+.slot.off b { opacity:.7; }
+.slot.standby { --sb:#222a26; --sbd:#b9beb7; color:#e3e6df; }
+.slot.hide { opacity:0; pointer-events:none; }
+/* Exploración: el grande es INTERACTUAR (verde) y la secundaria se pone roja cuando hay un rival a tiro. */
+.slot.int { --sb:#1f4a2a; --sbd:#d6f2cf; }
+.slot.int.off { --sb:#2a2e2c; --sbd:#9aa29a; color:#d5d8d2; }
+.slot.atk { --sb:#7a2216; --sbd:#ffd9cf; }
+/* Pulsar: el círculo se ilumina y encoge un poco. Fin de la recarga: un destello corto. */
+.slot.on::before, .slot.tap::before { --bga:.85; --sb:#ffcf3a; --sbd:#fff6d0; transform:scale(.9); }
+.slot.on, .slot.tap { color:#1c1a12; }
+.slot.on b, .slot.tap b { text-shadow:none; }
+.slot.ready::before { animation:rdy .5s ease-out; }
+@keyframes rdy { 0% { box-shadow:0 0 0 0 rgba(255,236,160,.9); } 100% { box-shadow:0 0 0 12px rgba(255,236,160,0); } }
+/* Posiciones (centro de cada botón respecto a la esquina inferior derecha). Revisión del 27-10 noche (Sebastian): el
+   ATAQUE pasa a la izquierda, más o menos donde estaba la esquiva (−172, −74), y el resto se ordena en arco a su
+   izquierda y por encima. Así queda una FRANJA LIBRE a la derecha (≈ 110 px, desde abajo hasta ⇄) para arrastrar la
+   cámara con el pulgar sin ir al centro. Ninguna área táctil pisa a otra ni la franja. */
+.s-main  { --sz:78px; --hit:96px; --sb:#7a2216; --sbd:#ffd9cf; left:-172px; top:-74px; }
+.s-main b { font-size:31px; } .s-main .l { font-size:9px; }
+.s-main.off { --sb:#4a2a25; }
+.s-dodge { --sz:54px; left:-262px; top:-104px; }
+.s-ab1   { left:-254px; top:-186px; }
+.s-ab2   { left:-196px; top:-234px; }
+.s-ab3   { left:-150px; top:-160px; }
+.s-guard { --sz:44px; --hit:58px; left:-340px; top:-150px; }
+.s-ctx   { --sz:44px; --hit:58px; --sb:#1f4a2a; --sbd:#d6f2cf; left:-332px; top:-232px; }
+/* «Batalla/Explorar» (alterna el menú a mano): cuadrado pequeño a la izquierda del grupo. */
+.s-menu  { --sz:40px; --hit:54px; --sb:#3a3524; --sbd:#efe2b0; left:-352px; top:-74px; border-radius:12px; }
+.s-menu::before, .s-menu::after { border-radius:9px; }
+/* ⇄ explorador / bestia: APARTE, arriba del grupo, cuadrado redondeado azul con doble borde. */
+.s-swap  { --sz:48px; --hit:60px; --sb:#173a63; --sbd:#9fd0ff; left:-36px; top:-258px; border-radius:14px; }
+.s-swap::before, .s-swap::after { border-radius:12px; }
+.s-swap::before { border-width:2px; box-shadow:0 0 0 2px color-mix(in srgb, #0b1a2c 60%, transparent), 0 0 0 3.5px color-mix(in srgb, #9fd0ff 60%, transparent); }
+.s-guard .l, .s-ab3 .l, .s-ctx .l, .s-menu .l, .s-swap .l { font-size:7.5px; max-width:44px; } .s-guard b, .s-ctx b, .s-menu b, .s-swap b { font-size:17px; }
+.stage[data-ctx="COMBATE"] .s-ab1:not(.off), .stage[data-ctx="COMBATE"] .s-ab2:not(.off), .stage[data-ctx="COMBATE"] .s-ab3:not(.off) { --sb:#3a2463; --sbd:#e3d6fb; }
+.chooser { position:absolute; inset:0; z-index:7; pointer-events:none; }
+.chooser button { pointer-events:auto; position:absolute; width:62px; height:62px; margin:-31px 0 0 -31px; padding:0; border-radius:50%; background:color-mix(in srgb, #1f4a2a calc(var(--bga, .48) * 100% + 15%), transparent); color:#fff; border:1.5px solid color-mix(in srgb, #d6f2cf 75%, transparent); box-shadow:0 2px 6px rgba(0,0,0,.25); text-shadow:0 1px 2px #000;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; font-size:9.5px; transform:scale(var(--ui)); }
+.chooser button b { font-size:21px; font-weight:400; }
+.chooser button small { font-size:8px; color:#ffe28a; min-height:8px; }
+.chooser button.off { background:color-mix(in srgb, #2a2e2c calc(var(--bga, .48) * 100% + 15%), transparent); color:#c9ccc6; border-color:#8d918c; }
+.chooser .ch-t { position:absolute; transform:translate(-50%, -50%); font:600 11.5px system-ui; color:#f3f1ec; background:#1c2420; padding:2px 10px; border-radius:999px; white-space:nowrap; }
+.topr { position:absolute; right:max(14px, env(safe-area-inset-right)); top:max(6px, env(safe-area-inset-top)); z-index:8; display:flex; gap:10px; transform:scale(var(--ui)); transform-origin:top right; }
+.topr button { width:54px; height:54px; border-radius:50%; padding:0; font-size:21px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; background:color-mix(in srgb, #1d2621 calc(var(--bga, .48) * 100%), transparent); color:#fff; border:1.5px solid color-mix(in srgb, #e8e4da 70%, transparent); text-shadow:0 1px 2px #000; }
+.topr button small { font-size:9.5px; opacity:.85; }
+.topr button.on { background:color-mix(in srgb, #2f8f6e 80%, transparent); border-color:#bfe8d7; }
+.topr #radial.ready { border-color:#ffd04a; box-shadow:0 0 0 2px rgba(255,208,74,.45); }
+.radial { position:fixed; inset:0; z-index:7; background:rgba(8,12,10,.25); }
+.radial .ring { position:absolute; width:0; height:0; }
+.radial .ring button { position:absolute; width:66px; height:66px; margin:-33px 0 0 -33px; border-radius:50%; padding:0; font-size:11px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; background:#22302a; color:#f3f1ec; border:2px solid #d8d2c4; }
+.radial .ring button span { font-size:19px; }
+.radial .ring button.on { background:#2f6f5e; border-color:#bfe8d7; }
+.radial .ring button.hot { transform:scale(1.12); border-color:#ffd04a; }
+.radial .ring button.order { border-style:dashed; }
+.radial .ring button:disabled { background:#3b403d; color:#a9aba6; }
+.radial .center { position:absolute; left:-58px; top:58px; transform:translate(-50%,-50%); color:#f3f1ec; font-size:12px; background:#1c2420; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+.joy { position:absolute; z-index:4; width:calc(130px * var(--ui)); height:calc(130px * var(--ui)); margin:calc(-65px * var(--ui)) 0 0 calc(-65px * var(--ui)); border-radius:50%; border:2px solid rgba(255,255,255,.45); background:rgba(255,255,255,.1); pointer-events:none; left:calc(max(14px, env(safe-area-inset-left)) + 95px); bottom:calc(max(10px, env(safe-area-inset-bottom)) + 30px); }
+.joy.idle { opacity:.6; }
+.joy i { position:absolute; left:50%; top:50%; width:calc(46px * var(--ui)); height:calc(46px * var(--ui)); margin:calc(-23px * var(--ui)) 0 0 calc(-23px * var(--ui)); border-radius:50%; background:rgba(255,255,255,.55); }
+/* Aviso de pantalla en vertical (27-10 noche): no bloquea; se puede girar, pasar a horizontal o seguir así. */
+.rot { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:12; width:min(320px, 86vw); box-sizing:border-box; background:rgba(20,26,22,.92); color:#f3f1ec; border:1.5px solid #e8e4da; border-radius:14px; padding:14px 16px; text-align:center; font-size:14px; }
+.rot b.big { display:block; font-size:34px; line-height:1.1; margin-bottom:4px; }
+.rot p { margin:6px 0; } .rot .row2 { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.rot button { min-height:44px; background:#2f6f5e; color:#fff; border-color:#bfe8d7; } .rot button.ghost { background:transparent; color:#e8e4da; border-color:#8d918c; }
+.rot small { display:block; color:#ffe28a; min-height:1em; margin-top:6px; }
+.loading { position:fixed; inset:0; display:grid; place-content:center; text-align:center; background:var(--bg); z-index:20; padding:24px; }
+.over { position:absolute; inset:0; z-index:9; display:grid; place-content:center; background:rgba(10,8,8,.45); }
+.over .card { background:var(--panel); color:var(--ink); border-radius:14px; padding:16px 18px; max-width:360px; text-align:center; }
+.over .card h2 { margin:0 0 6px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>window.__C01_GLB_URL = "c01_game.glb"; window.__GLB_PACK = "modelos.json"; if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
+<script src="game.js"></script>
+</body>
+</html>
