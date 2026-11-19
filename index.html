@@ -185,7 +185,7 @@ i.hp b { display:block; height:100%; background:#6fd07a; } i.en b { display:bloc
 </head>
 <body>
 <div id="app"></div>
-<script>window.__C01_GLB_URL = "c01_game.glb"; window.__GLB_PACK = "modelos.json"; if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
+<script>window.__C01_GLB_URL = "c01_game.glb"; window.__GLB_PACK = "modelos.json"; if ("serviceWorker" in navigator) { const had = !!navigator.serviceWorker.controller; navigator.serviceWorker.register("sw.js").catch(() => {}); navigator.serviceWorker.addEventListener("controllerchange", () => { if (!had) return; const d = document.createElement("button"); d.textContent = "🔄 Hay una versión nueva del juego · toca para cargarla"; d.style.cssText = "position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;padding:12px 18px;border-radius:12px;border:2px solid #ffd04a;background:#2a2c28;color:#f6f1e4;font:700 16px system-ui"; d.onclick = () => location.reload(); document.body.appendChild(d); }); }</script>
 <script src="game.js"></script>
 </body>
 </html>
