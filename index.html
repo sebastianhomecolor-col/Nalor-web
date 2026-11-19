@@ -88,6 +88,10 @@ i.hp b { display:block; height:100%; background:#6fd07a; } i.en b { display:bloc
 .mapfull small { color:#d8d2c4; margin-top:4px; font:12px system-ui; }
 .mapfull .tpbtn { margin-top:8px; padding:10px 16px; border-radius:10px; border:1px solid #8a8270; background:#2a2c28; color:#f6f1e4; font:600 14px system-ui; }
 .mapfull .tpbtn.on { background:#7a5a10; border-color:#ffd04a; }
+/* 19-11: X para cerrar (arriba a la derecha) y zoom + − debajo */
+.mapfull .mapbtns { position:absolute; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right)); display:flex; flex-direction:column; gap:10px; z-index:2; }
+.mapfull .mapbtns button { width:52px; height:52px; border-radius:12px; border:1px solid #8a8270; background:rgba(42,44,40,.92); color:#f6f1e4; font:700 26px system-ui; line-height:1; padding:0; touch-action:none; }
+.mapfull .mapbtns #mapX { background:rgba(120,40,30,.92); border-color:#e0a090; margin-bottom:8px; }
 @keyframes areab { 0% { opacity:0; transform:translate(-50%, -6px); } 12% { opacity:1; transform:translate(-50%, 0); } 80% { opacity:1; } 100% { opacity:0; } }
 .floaters { position:absolute; inset:0; z-index:4; pointer-events:none; }
 .fl { position:absolute; left:0; top:0; font:800 17px system-ui; color:#fff; text-shadow:0 1px 3px #000, 0 0 2px #000; margin:-10px 0 0 -12px; }
